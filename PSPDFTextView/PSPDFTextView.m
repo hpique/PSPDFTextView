@@ -146,6 +146,18 @@
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - UIScrollViewDelegate
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    // HACK: Fixes possible unrecognized selector crash. See: https://github.com/steipete/PSPDFTextView/issues/13
+    if ([_realDelegate respondsToSelector:@selector(scrollViewDidScroll:)])
+    {
+        [_realDelegate scrollViewDidScroll:scrollView];
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - UITextViewDelegate
 
 - (void)textViewDidChangeSelection:(UITextView *)textView {
