@@ -28,11 +28,20 @@
 
 - (id)initWithFrame:(CGRect)frame textContainer:(NSTextContainer *)textContainer {
     if (self = [super initWithFrame:frame textContainer:textContainer]) {
-        if (PSPDFRequiresTextViewWorkarounds()) {
-            [super setDelegate:self];
-        }
+        [self customInit];
     }
     return self;
+}
+
+- (void)awakeFromNib{
+    [super awakeFromNib];
+    [self customInit];
+}
+
+- (void)customInit{
+    if (PSPDFRequiresTextViewWorkarounds()) {
+        [super setDelegate:self];
+    }
 }
 
 - (void)dealloc {
@@ -55,22 +64,19 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - UITextView
 
-- (void)setText:(NSString *)text
-{
+- (void)setText:(NSString *)text {
     _settingText = YES;
     [super setText:text];
     _settingText = NO;
 }
 
-- (void)setAttributedText:(NSAttributedString *)attributedText
-{
+- (void)setAttributedText:(NSAttributedString *)attributedText {
     _settingText = YES;
     [super setAttributedText:attributedText];
     _settingText = NO;
 }
 
-- (void)setSelectedRange:(NSRange)selectedRange
-{
+- (void)setSelectedRange:(NSRange)selectedRange {
     _settingSelection = YES;
     [super setSelectedRange:selectedRange];
     _settingSelection = NO;
@@ -138,7 +144,11 @@
 }
 
 - (void)scrollToVisibleCaretAnimated:(BOOL)animated {
-    [self scrollRectToVisibleConsideringInsets:[self caretRectForPosition:self.selectedTextRange.end] animated:animated];
+    const CGRect caretRect = [self caretRectForPosition:self.selectedTextRange.end];
+    // The caret is sometimes off by a pixel. When this happens, scrolling to its rect produces a little bounce.
+    // To avoid this, we scroll to its center instead.
+    const CGRect caretCenterRect = CGRectMake(CGRectGetMidX(caretRect), CGRectGetMidY(caretRect), 0, 0);
+    [self scrollRectToVisibleConsideringInsets:caretCenterRect animated:animated];
 }
 
 - (void)scrollToVisibleCaret {
@@ -199,10 +209,6 @@
 
 - (BOOL)respondsToSelector:(SEL)s {
     return [super respondsToSelector:s] || [self.realDelegate respondsToSelector:s];
-}
-
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)s {
-    return [super methodSignatureForSelector:s] ?: [(id)self.realDelegate methodSignatureForSelector:s];
 }
 
 - (id)forwardingTargetForSelector:(SEL)s {
